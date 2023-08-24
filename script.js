@@ -12,8 +12,8 @@ const mouseYElement = document.getElementById('mouseY')
 
 const LINE_COLORS = {
     Default: "#b0b0b0",    // Pastel gray
-    Unlocks: "#ff9999",    // Pastel red
-    Requires: "#99ccff",    // Pastel blue
+    Requires: "#ff9999",    // Pastel red
+    Unlocks: "#99ccff",    // Pastel blue
     StrokeWidth: 3,
 };
 
@@ -33,51 +33,6 @@ const CIRCLE_COLORS = {
     StrokeWidth: 2,
 };
 
-var data = {
-    // Starting point: Getting basic resources
-    quest1: { x: 0, y: 0, size: 1, title: "Mining Basics", subtitle: "Iron Age", description: "Mine your first piece of Iron." },
-
-    // Basic Machines & Power generation
-    quest2: { x: 1, y: 1, size: 1, requires: ['quest1'], title: "Coal Generator", subtitle: "Basic Power", description: "Craft a Coal Generator to produce energy." },
-    quest3: { x: 2, y: 1, size: 1, requires: ['quest2'], title: "Battery", subtitle: "Energy Storage", description: "Craft a basic energy storage battery." },
-    
-    // Early Tech 
-    quest4: { x: 3, y: 0, size: 1, requires: ['quest3'], title: "Electric Furnace", subtitle: "Upgrade!", description: "Craft an Electric Furnace to double ore output." },
-    quest5: { x: 3, y: 2, size: 1, requires: ['quest3'], title: "Machine Chassis", subtitle: "Building Blocks", description: "Craft a Machine Chassis which is used for most machines." },
-    
-    // Mining Automation & Advanced Power
-    quest6: { x: 4, y: 1, size: 1, requires: ['quest4', 'quest5'], title: "Miner", subtitle: "Automation", description: "Craft a Miner to automatically extract ores from the ground." },
-    quest7: { x: 5, y: 0, size: 1, requires: ['quest6'], title: "Solar Panel", subtitle: "Green Energy", description: "Craft a Solar Panel for daytime energy production." },
-    quest8: { x: 5, y: 2, size: 1, requires: ['quest6'], title: "Wind Turbine", subtitle: "Natural Power", description: "Harness the power of the wind with a Wind Turbine." },
-    
-    // Advanced Tech & Automation
-    quest9: { x: 6, y: 1, size: 1, requires: ['quest7', 'quest8'], title: "Assembler", subtitle: "Advanced Crafting", description: "Craft an Assembler for automated crafting." },
-    quest10: { x: 7, y: 0, size: 1, requires: ['quest9'], title: "Robot Arm", subtitle: "Automation Tool", description: "Craft a Robot Arm for advanced item manipulation." },
-    quest11: { x: 7, y: 2, size: 1, requires: ['quest9'], title: "Fluid Pump", subtitle: "Liquid Control", description: "Automate fluid movement and control with a Fluid Pump." },
-
-    // The Endgame
-    quest12: { x: 8, y: 1, size: 1, requires: ['quest10', 'quest11'], title: "Quantum Quarry", subtitle: "Endgame Mining", description: "Mine resources from a fictional dimension." },
-    quest13: { x: 9, y: 1, size: 1, requires: ['quest12'], title: "Fusion Reactor", subtitle: "Limitless Power", description: "Harness the power of fusion for endless energy." }
-};
-
-for (let key in data) {
-    const item = data[key];
-    if (item.requires) {
-        // Initialize unlocked to true and then set it to false if any required quest is not completed
-        item.unlocked = true;
-        for (const req of item.requires) {
-            if (!data[req].completed) {
-                item.unlocked = false;
-                break;
-            }
-        }
-    } else {
-        item.unlocked = true; // If there are no requirements, it's unlocked by default
-    }
-
-    item.completed = false; // Default to not completed for all quests
-}
-
 // Canvas Interaction Global Variables
 let isDragging = false;
 let prevX = 0;
@@ -88,17 +43,8 @@ let zoomLevel = 1;
 let hoveredItemKey = null;
 let selectedItemKey = null; // to store the currently selected item's key
 let renderRequested = false;
-let isMouseDown = false;
 let startX = 0;
 let startY = 0;
-
-function createItem(x = 0, y = 0, size = 1) {
-    return { 
-        x, 
-        y, 
-        size
-    };
-}
 
 function dynamicThrottle(func, delayFunc) {
     let lastCall = 0;
@@ -209,8 +155,7 @@ function mouseHandler(e) {
 }
 
 function handleMouseMove(e) {
-    if (isMouseDown) {
-        isDragging = true
+    if (isDragging) {
         handleDragging(e);
     } else {
         handleHoverEffect(e);
@@ -223,8 +168,6 @@ function handleMouseDown(e) {
     const rect = canvas.getBoundingClientRect();
     startX = e.clientX - rect.left;
     startY = e.clientY - rect.top;
-    isMouseDown = true;
-
     isDragging = true;
     prevX = e.clientX;
     prevY = e.clientY;
@@ -240,7 +183,6 @@ function handleMouseUp(e) {
         handleMouseClick()
     }
     
-    isMouseDown = false;
     isDragging = false;
 }
 
@@ -266,8 +208,8 @@ function handleHoverEffect(e) {
     const mouseX = e.clientX - rect.left;
     const mouseY = e.clientY - rect.top;
 
-    const roundedX = Math.floor(mouseX / 10) * 10;
-    const roundedY = Math.floor(mouseY / 10) * 10;
+    const roundedX = (Math.floor(mouseX / 10) * 10) + 2.5;
+    const roundedY = (Math.floor(mouseY / 10) * 10) + 2.5;
 
     if (roundedX === previousRoundedX && roundedY === previousRoundedY) {
         return;
@@ -276,7 +218,12 @@ function handleHoverEffect(e) {
     previousRoundedX = roundedX;
     previousRoundedY = roundedY;
 
-    hoveredItemKey = getHoveredItemKey(roundedX, roundedY);
+    tempHoveredItemKey = getHoveredItemKey(roundedX, roundedY);
+    if (hoveredItemKey == tempHoveredItemKey)
+        return
+
+    hoveredItemKey = tempHoveredItemKey
+
     mouseXElement.innerHTML = roundedX;
     mouseYElement.innerHTML = roundedY;
 
@@ -284,6 +231,7 @@ function handleHoverEffect(e) {
 
     const tooltip = document.getElementById('tooltip');
     if (hoveredItemKey) {
+        console.log('tooltip Redraw')
         const hoveredItem = data[hoveredItemKey];
         showTooltip(hoveredItem, tooltip);
         drawTooltip(hoveredItemKey, tooltip);
