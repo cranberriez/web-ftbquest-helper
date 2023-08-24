@@ -5,14 +5,16 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Canvas Data Visualization</title>
-    <style>
-        canvas {
-            border: 1px solid black;
-        }
-    </style>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <canvas id="canvas" width="800" height="600"></canvas>
+    <div id="canvasContainer" style="position: relative;">
+        <canvas id="canvas" width="1000" height="600"></canvas>
+        <div id="tooltip">
+            <h4>Heading</h4>
+            <p>Some text here...</p>
+        </div>
+    </div>
     <p>Zoom Level: <span id="zoomLevel">1.00</span></p>
     <script src="script.js"></script>
 </body>

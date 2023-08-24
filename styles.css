@@ -1,0 +1,12 @@
+canvas {
+    border: 1px solid black;
+}
+
+#tooltip {
+    pointer-events: none;
+    position: absolute; 
+    display: none; 
+    border: 1px solid black; 
+    background-color: white; 
+    padding: 10px;
+}

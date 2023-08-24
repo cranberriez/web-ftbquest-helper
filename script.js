@@ -33,6 +33,20 @@ function drawData() {
     }
 }
 
+function drawTooltip(hoveredItemKey, tooltip) {
+
+    // In the mousemove event listener:
+    if (hoveredItemKey) {
+        // Modify the tooltip content based on the hovered item
+        tooltip.innerHTML = `
+            <h4>Heading for ${hoveredItemKey}</h4>
+            <p>Details for ${hoveredItemKey}...</p>
+        `;
+    } else {
+        tooltip.style.display = 'none';
+    }
+}
+
 let isDragging = false;
 let prevX = 0;
 let prevY = 0;
@@ -60,10 +74,15 @@ canvas.addEventListener('mousemove', (e) => {
 
         for (let key in data) {
             const item = data[key];
-            const dx = mouseX - (item.x * zoomLevel + panOffsetX);
-            const dy = mouseY - (item.y * zoomLevel + panOffsetY);
+            const effectiveSize = item.size * zoomLevel * SIZE_MULTIPLIER;
 
-            if (Math.sqrt(dx * dx + dy * dy) <= item.size * zoomLevel) {
+            // Compute the bounding box of the circle
+            const leftBound = item.x * zoomLevel + panOffsetX - effectiveSize;
+            const rightBound = item.x * zoomLevel + panOffsetX + effectiveSize;
+            const topBound = item.y * zoomLevel + panOffsetY - effectiveSize;
+            const bottomBound = item.y * zoomLevel + panOffsetY + effectiveSize;
+
+            if (mouseX >= leftBound && mouseX <= rightBound && mouseY >= topBound && mouseY <= bottomBound) {
                 hoveredItemKey = key;
                 break;
             }
@@ -72,24 +91,25 @@ canvas.addEventListener('mousemove', (e) => {
         // Show and position the tooltip if an item is hovered
         const tooltip = document.getElementById('tooltip');
         if (hoveredItemKey) {
+            console.log(hoveredItemKey)
             tooltip.style.display = 'block';
             tooltip.style.left = (e.clientX + 10) + 'px'; // 10 is an offset to position the tooltip a bit right to the cursor
             tooltip.style.top = (e.clientY + 10) + 'px'; // 10 is an offset to position the tooltip a bit below the cursor
+            drawTooltip(hoveredItemKey, tooltip)
         } else {
             tooltip.style.display = 'none';
         }
-
-        drawData();
     }
+    else {
+        const dx = e.clientX - prevX;
+        const dy = e.clientY - prevY;
 
-    const dx = e.clientX - prevX;
-    const dy = e.clientY - prevY;
+        panOffsetX += dx;
+        panOffsetY += dy;
 
-    panOffsetX += dx;
-    panOffsetY += dy;
-
-    prevX = e.clientX;
-    prevY = e.clientY;
+        prevX = e.clientX;
+        prevY = e.clientY;
+    }
 
     drawData();
 });
