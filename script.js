@@ -7,6 +7,8 @@ const SCALE_FACTOR = 100;
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 const zoomLevelElement = document.getElementById('zoomLevel')
+const mouseXElement = document.getElementById('mouseX')
+const mouseYElement = document.getElementById('mouseY')
 
 var data = {
     item1: { x: 0, y: 0, size: 1, requires: ['item2']},
@@ -58,6 +60,7 @@ let panOffsetY = canvas.height / 2 - INITIAL_COORDS[1] * SCALE_FACTOR;;
 let zoomLevel = 1;
 let hoveredItemKey = null;
 let selectedItemKey = null; // to store the currently selected item's key
+let renderRequested = false;
 
 
 function createItem(x = 0, y = 0, size = 1) {
@@ -68,6 +71,32 @@ function createItem(x = 0, y = 0, size = 1) {
     };
 }
 
+function dynamicThrottle(func, delayFunc) {
+    let lastCall = 0;
+    return function(...args) {
+        const now = new Date().getTime();
+        const delay = delayFunc();
+        if (now - lastCall < delay) {
+            return;
+        }
+        lastCall = now;
+        return func(...args);
+    };
+}
+
+function isItemInView(item) {
+    const itemX = (item.x * SCALE_FACTOR) * zoomLevel + panOffsetX;
+    const itemY = (item.y * SCALE_FACTOR) * zoomLevel + panOffsetY;
+    const itemSize = item.size * SIZE_MULTIPLIER * zoomLevel;
+
+    return (
+        itemX + itemSize >= 0 &&
+        itemX - itemSize <= canvas.width &&
+        itemY + itemSize >= 0 &&
+        itemY - itemSize <= canvas.height
+    );
+}
+
 function drawData() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -76,7 +105,7 @@ function drawData() {
         const item = data[key];
         if (item.requires) {
             for (let req of item.requires) {
-                if (data[req]) {
+                if (data[req] && (isItemInView(item) || isItemInView(data[req]))) {
                     drawLine(item, data[req], key, req);
                 }
             }
@@ -85,7 +114,9 @@ function drawData() {
 
     // Draw circles
     for (let key in data) {
-        drawCircle(data[key]);
+        if (isItemInView(data[key])) {
+            drawCircle(data[key]);
+        }
     }
 }
 
@@ -134,37 +165,75 @@ function drawTooltip(hoveredItemKey, tooltip) {
             <h4>Heading for ${hoveredItemKey}</h4>
             <p>Details for ${hoveredItemKey}...</p>
         `;
-    } else {
-        tooltip.style.display = 'none';
     }
 }
 
-canvas.addEventListener('mousedown', (e) => {
-    isDragging = true;
-    prevX = e.clientX;
-    prevY = e.clientY;
-});
+function mouseHandler(e) {
+    switch (e.type) {
+        case 'mousemove':
+            handleMouseMove(e);
+            break;
+        case 'mousedown':
+            isDragging = true;
+            prevX = e.clientX;
+            prevY = e.clientY;
+            break;
+        case 'mouseup':
+            isDragging = false;
+            break;
+    }
+}
 
-canvas.addEventListener('mouseup', () => {
-    isDragging = false;
-});
-
-canvas.addEventListener('mousemove', (e) => {
-    if (!isDragging) {
-        handleHoverEffect(e);
-    } else {
+function handleMouseMove(e) {
+    if (isDragging) {
         handleDragging(e);
+    } else {
+        handleHoverEffect(e);
     }
 
-    drawData();
-});
+    requestRender();
+}
+
+function requestRender() {
+    if (!renderRequested) {
+        renderRequested = true;
+        requestAnimationFrame(() => {
+            drawData();
+            renderRequested = false;
+        });
+    }
+}
+
+canvas.addEventListener('mousemove', dynamicThrottle(mouseHandler, () => isDragging || hoveredItemKey ? 20 : 200));
+canvas.addEventListener('mousedown', mouseHandler);
+canvas.addEventListener('mouseup', mouseHandler);
+
+let previousRoundedX = null;
+let previousRoundedY = null;
 
 function handleHoverEffect(e) {
     const rect = canvas.getBoundingClientRect();
     const mouseX = e.clientX - rect.left;
     const mouseY = e.clientY - rect.top;
-    
-    hoveredItemKey = getHoveredItemKey(mouseX, mouseY);
+
+    // Round to the nearest 10th
+    const roundedX = Math.floor(mouseX / 10) * 10;
+    const roundedY = Math.floor(mouseY / 10) * 10;
+
+    // Check if the rounded values have changed
+    if (roundedX === previousRoundedX && roundedY === previousRoundedY) {
+        return;  // Do nothing if the values haven't changed
+    }
+
+    previousRoundedX = roundedX;
+    previousRoundedY = roundedY;
+
+    hoveredItemKey = getHoveredItemKey(roundedX, roundedY);
+    mouseXElement.innerHTML = roundedX;
+    mouseYElement.innerHTML = roundedY;
+
+    // Change hover DEBUG text to show hovered item
+    document.getElementById('hoveredItemKey').innerHTML = hoveredItemKey;
 
     // Show and position the tooltip if an item is hovered
     const tooltip = document.getElementById('tooltip');
@@ -244,39 +313,23 @@ canvas.addEventListener('wheel', (e) => {
     panOffsetX += (worldXAfterZoom - worldXBeforeZoom) * zoomLevel;
     panOffsetY += (worldYAfterZoom - worldYBeforeZoom) * zoomLevel;
 
-    drawData();
+    requestRender();
     e.preventDefault();
 });
 
-canvas.addEventListener('click', (e) => {
-    const rect = canvas.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
+canvas.addEventListener('click', () => {
+    if (hoveredItemKey) {
+        selectedItemKey = hoveredItemKey;
 
-    selectedItemKey = null; // Reset the selectedItemKey
-
-    for (let key in data) {
-        const item = data[key];
-        const effectiveSize = item.size * zoomLevel * SIZE_MULTIPLIER;
-
-        const leftBound = (item.x * SCALE_FACTOR) * zoomLevel + panOffsetX - effectiveSize;
-        const rightBound = (item.x * SCALE_FACTOR) * zoomLevel + panOffsetX + effectiveSize;
-        const topBound = (item.y * SCALE_FACTOR) * zoomLevel + panOffsetY - effectiveSize;
-        const bottomBound = (item.y * SCALE_FACTOR) * zoomLevel + panOffsetY + effectiveSize;
-
-        if (mouseX >= leftBound && mouseX <= rightBound && mouseY >= topBound && mouseY <= bottomBound) {
-            selectedItemKey = key;
-            break;
-        }
-    }
-
-    if (selectedItemKey) {
-        updateQuestPanel(selectedItemKey); // Show and populate the side panel with the selected quest's data
+        // Change selected DEBUG text to show hovered item
+        document.getElementById('selectedItemKey').innerHTML = selectedItemKey
+    
+        updateQuestPanel(hoveredItemKey); // Show and populate the side panel with the selected quest's data
     } else {
+        selectedItemKey = null;
         updateQuestPanel(null); // Hide the panel if no quest is selected
     }
 });
-
 
 function updateQuestPanel(itemKey) {
     const questDetails = document.getElementById('questDetails');
@@ -300,7 +353,7 @@ completeButton.addEventListener('click', () => {
     completeQuest(selectedItemKey);
     
     updateQuestPanel(null); // Hide the panel
-    drawData(); // Re-draw the canvas to reflect the changes
+    requestRender(); // Re-draw the canvas to reflect the changes
 });
 
 function completeQuest(questKey) {
@@ -316,9 +369,9 @@ function completeQuest(questKey) {
             }
         }
     }
-    drawData(); // Redraw the canvas to reflect changes
+    requestRender(); // Redraw the canvas to reflect changes
 }
 
 
 
-drawData();
+requestRender();
