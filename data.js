@@ -40,7 +40,7 @@ var data = {
     quest25: { x: 10, y: 2, size: 1, requires: ['quest24', 'quest20'], title: "Elemental Synthesizer", subtitle: "subtitle", description: "" },
 
     // Endgame Tech
-    quest26: { x: 9, y: -2, size: 1, requires: ['quest17'], title: "Space Rocket", subtitle: "subtitle", description: "" },
+    quest26: { x: 9, y: -2, size: 1, requires: ['quest17', 'quest22'], title: "Space Rocket", subtitle: "subtitle", description: "" },
     quest27: { x: 10, y: -3, size: 1, requires: ['quest26'], title: "Space Station", subtitle: "subtitle", description: "" },
     quest28: { x: 11, y: -4, size: 1, requires: ['quest27', 'quest22'], title: "Interstellar Travel", subtitle: "subtitle", description: "" },
     
@@ -49,12 +49,12 @@ var data = {
     quest30: { x: 13, y: 2, size: 1, requires: ['quest29'], title: "Elemental Infusion", subtitle: "subtitle", description: "" },
 
     // The Final Quests
-    quest31: { x: 12, y: 0, size: 2, requires: ['quest28', 'quest30'], title: "Universal Core", subtitle: "subtitle", description: "" },
-    quest32: { x: 13, y: -1, size: 2, requires: ['quest31', 'quest25'], title: "Galactic Nexus", subtitle: "subtitle", description: "" },
+    quest31: { x: 12, y: 0, size: 2, requires: ['quest28', 'quest30', 'quest25'], title: "Universal Core", subtitle: "subtitle", description: "" },
+    quest32: { x: 13, y: -1, size: 2, requires: ['quest31', 'quest28'], title: "Galactic Nexus", subtitle: "subtitle", description: "" },
 
     // Bonus Quests (hidden branches?)
     // Quantum Mechanics
-    quest33: { x: 14, y: 1, size: 1, requires: ['quest32'], title: "Quantum Field Generator", subtitle: "subtitle", description: "" },
+    quest33: { x: 14, y: 1, size: 1, requires: ['quest32', 'quest20'], title: "Quantum Field Generator", subtitle: "subtitle", description: "" },
     quest34: { x: 15, y: 0, size: 1, requires: ['quest33'], title: "Particle Accelerator", subtitle: "subtitle", description: "" },
     quest35: { x: 15, y: 2, size: 1, requires: ['quest33'], title: "Wave Function Stabilizer", subtitle: "subtitle", description: "" },
 

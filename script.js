@@ -1,4 +1,4 @@
-const MIN_ZOOM = 0.5;
+const MIN_ZOOM = 0.4;
 const MAX_ZOOM = 3.0;
 const SIZE_MULTIPLIER = 30;
 const INITIAL_COORDS = [0, 0]
@@ -81,7 +81,7 @@ function drawData() {
         if (item.requires) {
             for (let req of item.requires) {
                 if (data[req] && (isItemInView(item) || isItemInView(data[req]))) {
-                    drawLine(item, data[req], key, req);
+                    drawLine(data[req], item, key, req);
                 }
             }
         }
@@ -100,13 +100,43 @@ function drawLine(source, target, sourceKey, targetKey) {
     if (hoveredItemKey === sourceKey) color = LINE_COLORS.Requires;
     else if (hoveredItemKey === targetKey) color = LINE_COLORS.Unlocks;
 
+    const startX = source.x * SCALE_FACTOR * zoomLevel + panOffsetX;
+    const startY = source.y * SCALE_FACTOR * zoomLevel + panOffsetY;
+    const endX = target.x * SCALE_FACTOR * zoomLevel + panOffsetX;
+    const endY = target.y * SCALE_FACTOR * zoomLevel + panOffsetY;
+
+    // Calculate the midpoint
+    const midX = (startX + endX) / 2;
+    const midY = (startY + endY) / 2;
+
+    // Draw the main line
     ctx.beginPath();
-    ctx.moveTo(source.x * SCALE_FACTOR * zoomLevel + panOffsetX,
-               source.y * SCALE_FACTOR * zoomLevel + panOffsetY);
-    ctx.lineTo(target.x * SCALE_FACTOR * zoomLevel + panOffsetX,
-               target.y * SCALE_FACTOR * zoomLevel + panOffsetY);
+    ctx.moveTo(startX, startY);
+    ctx.lineTo(endX, endY);
     ctx.strokeStyle = color;
     ctx.lineWidth = LINE_COLORS.StrokeWidth * zoomLevel;
+    ctx.stroke();
+
+    // Draw the arrowhead at the midpoint
+    const arrowLength = 10 * zoomLevel;  // Adjust this value as needed
+    const arrowWidth = 3 * zoomLevel;  // Adjust this value to make the arrow narrower
+
+    // Calculate the angle of the line
+    const angle = Math.atan2(startY - endY, startX - endX);
+
+    // Draw the arrow using the relevent function
+    drawArrow(midX, midY, angle, arrowLength, arrowWidth, color);
+}
+
+function drawArrow(x, y, angle, length, width, color) {
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + length * Math.cos(angle - Math.PI / 4), y + length * Math.sin(angle - Math.PI / 4));  // Adjusted the angle for a narrower arrow
+    ctx.lineTo(x + length * Math.cos(angle + Math.PI / 4), y + length * Math.sin(angle + Math.PI / 4));  // Adjusted the angle for a narrower arrow
+    ctx.closePath(); // Close the triangle of the arrowhead
+    ctx.strokeStyle = color;
+    ctx.fillStyle = color;  // Fill the arrowhead with the same color as the line
+    ctx.fill();
     ctx.stroke();
 }
 
