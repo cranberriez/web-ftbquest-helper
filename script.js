@@ -107,52 +107,69 @@ canvas.addEventListener('mouseup', () => {
 
 canvas.addEventListener('mousemove', (e) => {
     if (!isDragging) {
-        const rect = canvas.getBoundingClientRect();
-        const mouseX = e.clientX - rect.left;
-        const mouseY = e.clientY - rect.top;
-        
-        hoveredItemKey = null;
-
-        for (let key in data) {
-            const item = data[key];
-            const effectiveSize = item.size * zoomLevel * SIZE_MULTIPLIER;
-
-            // Compute the bounding box of the circle
-            const leftBound = (item.x * SCALE_FACTOR) * zoomLevel + panOffsetX - effectiveSize;
-            const rightBound = (item.x * SCALE_FACTOR) * zoomLevel + panOffsetX + effectiveSize;
-            const topBound = (item.y * SCALE_FACTOR) * zoomLevel + panOffsetY - effectiveSize;
-            const bottomBound = (item.y * SCALE_FACTOR) * zoomLevel + panOffsetY + effectiveSize;
-
-            if (mouseX >= leftBound && mouseX <= rightBound && mouseY >= topBound && mouseY <= bottomBound) {
-                hoveredItemKey = key;
-                break;
-            }
-        }
-
-        // Show and position the tooltip if an item is hovered
-        const tooltip = document.getElementById('tooltip');
-        if (hoveredItemKey) {
-            tooltip.style.display = 'block';
-            tooltip.style.left = (e.clientX + 10) + 'px'; // 10 is an offset to position the tooltip a bit right to the cursor
-            tooltip.style.top = (e.clientY + 10) + 'px'; // 10 is an offset to position the tooltip a bit below the cursor
-            drawTooltip(hoveredItemKey, tooltip)
-        } else {
-            tooltip.style.display = 'none';
-        }
-    }
-    else {
-        const dx = e.clientX - prevX;
-        const dy = e.clientY - prevY;
-
-        panOffsetX += dx;
-        panOffsetY += dy;
-
-        prevX = e.clientX;
-        prevY = e.clientY;
+        handleHoverEffect(e);
+    } else {
+        handleDragging(e);
     }
 
     drawData();
 });
+
+function handleHoverEffect(e) {
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+    
+    hoveredItemKey = getHoveredItemKey(mouseX, mouseY);
+
+    // Show and position the tooltip if an item is hovered
+    const tooltip = document.getElementById('tooltip');
+    if (hoveredItemKey) {
+        showTooltip(e, tooltip);
+        drawTooltip(hoveredItemKey, tooltip);
+    } else {
+        hideTooltip(tooltip);
+    }
+}
+
+function getHoveredItemKey(mouseX, mouseY) {
+    for (let key in data) {
+        const item = data[key];
+        const effectiveSize = item.size * zoomLevel * SIZE_MULTIPLIER;
+
+        // Compute the bounding box of the circle
+        const leftBound = (item.x * SCALE_FACTOR) * zoomLevel + panOffsetX - effectiveSize;
+        const rightBound = (item.x * SCALE_FACTOR) * zoomLevel + panOffsetX + effectiveSize;
+        const topBound = (item.y * SCALE_FACTOR) * zoomLevel + panOffsetY - effectiveSize;
+        const bottomBound = (item.y * SCALE_FACTOR) * zoomLevel + panOffsetY + effectiveSize;
+
+        if (mouseX >= leftBound && mouseX <= rightBound && mouseY >= topBound && mouseY <= bottomBound) {
+            return key;
+        }
+    }
+    return null;
+}
+
+function showTooltip(e, tooltip) {
+    tooltip.style.display = 'block';
+    tooltip.style.left = (e.clientX + 10) + 'px'; // 10 is an offset to position the tooltip a bit right to the cursor
+    tooltip.style.top = (e.clientY + 10) + 'px'; // 10 is an offset to position the tooltip a bit below the cursor
+}
+
+function hideTooltip(tooltip) {
+    tooltip.style.display = 'none';
+}
+
+function handleDragging(e) {
+    const dx = e.clientX - prevX;
+    const dy = e.clientY - prevY;
+
+    panOffsetX += dx;
+    panOffsetY += dy;
+
+    prevX = e.clientX;
+    prevY = e.clientY;
+}
 
 canvas.addEventListener('wheel', (e) => {
     const scaleFactor = 1.1;
