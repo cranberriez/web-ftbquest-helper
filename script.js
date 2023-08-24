@@ -25,16 +25,53 @@ function createItem(x = 0, y = 0, size = 1) {
 function drawData() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+    // Draw lines
     for (let key in data) {
         const item = data[key];
-        ctx.beginPath();
-        ctx.arc((item.x * SCALE_FACTOR) * zoomLevel + panOffsetX, 
-                (item.y * SCALE_FACTOR) * zoomLevel + panOffsetY, 
-                (item.size * SIZE_MULTIPLIER) * zoomLevel, 0, Math.PI * 2);
-        ctx.strokeStyle = "#000"; // Black border, for example
-        ctx.lineWidth = 2 * zoomLevel; // Border width
-        ctx.stroke();
+        if (item.requires) {
+            for (let req of item.requires) {
+                if (data[req]) {
+                    drawLine(item, data[req], key, req);
+                }
+            }
+        }
     }
+
+    // Draw circles
+    for (let key in data) {
+        drawCircle(data[key]);
+    }
+}
+
+function drawLine(source, target, sourceKey, targetKey) {
+    let color = "#000"; // default color
+    if (hoveredItemKey === sourceKey) color = "#f00"; // requires color
+    else if (hoveredItemKey === targetKey) color = "#0f0"; // unlocks color
+
+    ctx.beginPath();
+    ctx.moveTo(source.x * SCALE_FACTOR * zoomLevel + panOffsetX,
+               source.y * SCALE_FACTOR * zoomLevel + panOffsetY);
+    ctx.lineTo(target.x * SCALE_FACTOR * zoomLevel + panOffsetX,
+               target.y * SCALE_FACTOR * zoomLevel + panOffsetY);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2 * zoomLevel;
+    ctx.stroke();
+}
+
+function drawCircle(item) {
+    ctx.beginPath();
+    ctx.arc((item.x * SCALE_FACTOR) * zoomLevel + panOffsetX,
+            (item.y * SCALE_FACTOR) * zoomLevel + panOffsetY,
+            (item.size * SIZE_MULTIPLIER) * zoomLevel, 0, Math.PI * 2);
+
+    // Fill the circle
+    ctx.fillStyle = "#FFF"; // White background, for example
+    ctx.fill();
+
+    // Stroke the circle
+    ctx.strokeStyle = "#000"; // Black border
+    ctx.lineWidth = 2 * zoomLevel; // Border width
+    ctx.stroke();
 }
 
 function drawTooltip(hoveredItemKey, tooltip) {
