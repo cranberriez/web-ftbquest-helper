@@ -1,14 +1,16 @@
 const MIN_ZOOM = 0.5;
 const MAX_ZOOM = 3.0;
 const SIZE_MULTIPLIER = 30;
+const INITIAL_COORDS = [0, 0]
+const SCALE_FACTOR = 100;
 
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 const zoomLevelElement = document.getElementById('zoomLevel')
 
 const data = {
-    item1: { x: 100, y: 100, size: 1 },
-    item2: { x: 200, y: 200, size: 1 },
+    item1: { x: 0, y: 0, size: 1, requires: ['item2'] },
+    item2: { x: 1, y: 1, size: 1, unlocks: ['item1'] },
     // ... add more data as required
 };
 
@@ -26,7 +28,9 @@ function drawData() {
     for (let key in data) {
         const item = data[key];
         ctx.beginPath();
-        ctx.arc(item.x * zoomLevel + panOffsetX, item.y * zoomLevel + panOffsetY, (item.size * SIZE_MULTIPLIER) * zoomLevel, 0, Math.PI * 2);
+        ctx.arc((item.x * SCALE_FACTOR) * zoomLevel + panOffsetX, 
+                (item.y * SCALE_FACTOR) * zoomLevel + panOffsetY, 
+                (item.size * SIZE_MULTIPLIER) * zoomLevel, 0, Math.PI * 2);
         ctx.strokeStyle = "#000"; // Black border, for example
         ctx.lineWidth = 2 * zoomLevel; // Border width
         ctx.stroke();
@@ -34,7 +38,6 @@ function drawData() {
 }
 
 function drawTooltip(hoveredItemKey, tooltip) {
-
     // In the mousemove event listener:
     if (hoveredItemKey) {
         // Modify the tooltip content based on the hovered item
@@ -50,9 +53,10 @@ function drawTooltip(hoveredItemKey, tooltip) {
 let isDragging = false;
 let prevX = 0;
 let prevY = 0;
-let panOffsetX = 0;
-let panOffsetY = 0;
+let panOffsetX = canvas.width / 2 - INITIAL_COORDS[0] * SCALE_FACTOR;;
+let panOffsetY = canvas.height / 2 - INITIAL_COORDS[1] * SCALE_FACTOR;;
 let zoomLevel = 1;
+let hoveredItemKey = null;
 
 canvas.addEventListener('mousedown', (e) => {
     isDragging = true;
@@ -77,10 +81,10 @@ canvas.addEventListener('mousemove', (e) => {
             const effectiveSize = item.size * zoomLevel * SIZE_MULTIPLIER;
 
             // Compute the bounding box of the circle
-            const leftBound = item.x * zoomLevel + panOffsetX - effectiveSize;
-            const rightBound = item.x * zoomLevel + panOffsetX + effectiveSize;
-            const topBound = item.y * zoomLevel + panOffsetY - effectiveSize;
-            const bottomBound = item.y * zoomLevel + panOffsetY + effectiveSize;
+            const leftBound = (item.x * SCALE_FACTOR) * zoomLevel + panOffsetX - effectiveSize;
+            const rightBound = (item.x * SCALE_FACTOR) * zoomLevel + panOffsetX + effectiveSize;
+            const topBound = (item.y * SCALE_FACTOR) * zoomLevel + panOffsetY - effectiveSize;
+            const bottomBound = (item.y * SCALE_FACTOR) * zoomLevel + panOffsetY + effectiveSize;
 
             if (mouseX >= leftBound && mouseX <= rightBound && mouseY >= topBound && mouseY <= bottomBound) {
                 hoveredItemKey = key;
@@ -91,7 +95,6 @@ canvas.addEventListener('mousemove', (e) => {
         // Show and position the tooltip if an item is hovered
         const tooltip = document.getElementById('tooltip');
         if (hoveredItemKey) {
-            console.log(hoveredItemKey)
             tooltip.style.display = 'block';
             tooltip.style.left = (e.clientX + 10) + 'px'; // 10 is an offset to position the tooltip a bit right to the cursor
             tooltip.style.top = (e.clientY + 10) + 'px'; // 10 is an offset to position the tooltip a bit below the cursor
