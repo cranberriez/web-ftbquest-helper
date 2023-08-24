@@ -11,20 +11,23 @@
     <div id="canvasContainer" style="position: relative;">
         <canvas id="canvas" width="1000" height="600"></canvas>
         <div id="tooltip">
-            <h4>Heading</h4>
-            <p>Some text here...</p>
+            <h3 id="tooltipTitle"></h3>
+            <h4 id="tooltipSubtitle"></h4>
         </div>
     </div>
     <div id="questDetails" style="display:none;">
         <h1 id="questTitle"></h1>
         <h2 id="questSubheading"></h2>
+        <p id="questDescription"></p>
         <button id="completeButton">Complete</button>
     </div>
-    <p>Zoom Level: <span id="zoomLevel">1.00</span></p>
-    <p>Selected Item Key: <span id="selectedItemKey">null</span></p>
-    <p>Hovered Item Key: <span id="hoveredItemKey">null</span></p>
-    <p>MouseX: <span id="mouseX"></span></p>
-    <p>MouseY: <span id="mouseY"></span></p>
+    <div id="debugInformation">
+        <p>Zoom Level: <span id="zoomLevel">1.00</span></p>
+        <p>Selected Item Key: <span id="selectedItemKey">null</span></p>
+        <p>Hovered Item Key: <span id="hoveredItemKey">null</span></p>
+        <p>MouseX: <span id="mouseX"></span></p>
+        <p>MouseY: <span id="mouseY"></span></p>
+    </div>
     <script src="script.js"></script>
 </body>
 </html>

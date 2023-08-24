@@ -10,27 +10,54 @@ const zoomLevelElement = document.getElementById('zoomLevel')
 const mouseXElement = document.getElementById('mouseX')
 const mouseYElement = document.getElementById('mouseY')
 
+const LINE_COLORS = {
+    Default: "#b0b0b0",    // Pastel gray
+    Unlocks: "#ff9999",    // Pastel red
+    Requires: "#99ccff",    // Pastel blue
+    StrokeWidth: 3,
+};
+
+const CIRCLE_COLORS = {
+    Unlocked: {
+        fill: "#6677cc",         // Dark pastel blue
+        stroke: "#8899dd"        // Brighter variant of dark pastel blue
+    },
+    Locked: {
+        fill: "#555555",         // Dark gray
+        stroke: "#767676"        // Brighter variant of dark gray
+    },
+    Completed: {
+        fill: "#99ff99",         // Pastel green
+        stroke: "#bbffbb"        // Brighter variant of pastel green
+    },
+    StrokeWidth: 2,
+};
+
 var data = {
-    item1: { x: 0, y: 0, size: 1, requires: ['item2']},
-    item2: { x: -1, y: 1, size: 1, requires: ['item3', 'item4']},
-    item3: { x: -2, y: 2, size: 1},
-    item4: { x: 0, y: 2, size: 1, requires: ['item5'] },
-    item5: { x: 0, y: 3, size: 1},
-    item6: { x: 2, y: 1, size: 1, requires: ['item7'] },
-    item7: { x: 2, y: 2, size: 1, requires: ['item8'] },
-    item8: { x: 3, y: 2, size: 1, requires: ['item9'] },
-    item9: { x: 3, y: 1, size: 1},
-    item10: { x: 1, y: -1, size: 1, requires: ['item11', 'item12'] },
-    item11: { x: 0, y: -1, size: 1},
-    item12: { x: 2, y: -2, size: 1, requires: ['item13'] },
-    item13: { x: 3, y: -3, size: 1, requires: ['item14'] },
-    item14: { x: 4, y: -4, size: 1},
-    item15: { x: -2, y: -1, size: 1, requires: ['item16'] },
-    item16: { x: -3, y: -2, size: 1, requires: ['item17'] },
-    item17: { x: -4, y: -2, size: 1},
-    item18: { x: -1, y: -3, size: 1, requires: ['item19'] },
-    item19: { x: -2, y: -4, size: 1, requires: ['item20'] },
-    item20: { x: -3, y: -5, size: 1},
+    // Starting point: Getting basic resources
+    quest1: { x: 0, y: 0, size: 1, title: "Mining Basics", subtitle: "Iron Age", description: "Mine your first piece of Iron." },
+
+    // Basic Machines & Power generation
+    quest2: { x: 1, y: 1, size: 1, requires: ['quest1'], title: "Coal Generator", subtitle: "Basic Power", description: "Craft a Coal Generator to produce energy." },
+    quest3: { x: 2, y: 1, size: 1, requires: ['quest2'], title: "Battery", subtitle: "Energy Storage", description: "Craft a basic energy storage battery." },
+    
+    // Early Tech 
+    quest4: { x: 3, y: 0, size: 1, requires: ['quest3'], title: "Electric Furnace", subtitle: "Upgrade!", description: "Craft an Electric Furnace to double ore output." },
+    quest5: { x: 3, y: 2, size: 1, requires: ['quest3'], title: "Machine Chassis", subtitle: "Building Blocks", description: "Craft a Machine Chassis which is used for most machines." },
+    
+    // Mining Automation & Advanced Power
+    quest6: { x: 4, y: 1, size: 1, requires: ['quest4', 'quest5'], title: "Miner", subtitle: "Automation", description: "Craft a Miner to automatically extract ores from the ground." },
+    quest7: { x: 5, y: 0, size: 1, requires: ['quest6'], title: "Solar Panel", subtitle: "Green Energy", description: "Craft a Solar Panel for daytime energy production." },
+    quest8: { x: 5, y: 2, size: 1, requires: ['quest6'], title: "Wind Turbine", subtitle: "Natural Power", description: "Harness the power of the wind with a Wind Turbine." },
+    
+    // Advanced Tech & Automation
+    quest9: { x: 6, y: 1, size: 1, requires: ['quest7', 'quest8'], title: "Assembler", subtitle: "Advanced Crafting", description: "Craft an Assembler for automated crafting." },
+    quest10: { x: 7, y: 0, size: 1, requires: ['quest9'], title: "Robot Arm", subtitle: "Automation Tool", description: "Craft a Robot Arm for advanced item manipulation." },
+    quest11: { x: 7, y: 2, size: 1, requires: ['quest9'], title: "Fluid Pump", subtitle: "Liquid Control", description: "Automate fluid movement and control with a Fluid Pump." },
+
+    // The Endgame
+    quest12: { x: 8, y: 1, size: 1, requires: ['quest10', 'quest11'], title: "Quantum Quarry", subtitle: "Endgame Mining", description: "Mine resources from a fictional dimension." },
+    quest13: { x: 9, y: 1, size: 1, requires: ['quest12'], title: "Fusion Reactor", subtitle: "Limitless Power", description: "Harness the power of fusion for endless energy." }
 };
 
 for (let key in data) {
@@ -51,7 +78,7 @@ for (let key in data) {
     item.completed = false; // Default to not completed for all quests
 }
 
-
+// Canvas Interaction Global Variables
 let isDragging = false;
 let prevX = 0;
 let prevY = 0;
@@ -61,7 +88,9 @@ let zoomLevel = 1;
 let hoveredItemKey = null;
 let selectedItemKey = null; // to store the currently selected item's key
 let renderRequested = false;
-
+let isMouseDown = false;
+let startX = 0;
+let startY = 0;
 
 function createItem(x = 0, y = 0, size = 1) {
     return { 
@@ -121,9 +150,9 @@ function drawData() {
 }
 
 function drawLine(source, target, sourceKey, targetKey) {
-    let color = "#000"; // default color
-    if (hoveredItemKey === sourceKey) color = "#f00"; // requires color
-    else if (hoveredItemKey === targetKey) color = "#0f0"; // unlocks color
+    let color = LINE_COLORS.Default;
+    if (hoveredItemKey === sourceKey) color = LINE_COLORS.Requires;
+    else if (hoveredItemKey === targetKey) color = LINE_COLORS.Unlocks;
 
     ctx.beginPath();
     ctx.moveTo(source.x * SCALE_FACTOR * zoomLevel + panOffsetX,
@@ -131,7 +160,7 @@ function drawLine(source, target, sourceKey, targetKey) {
     ctx.lineTo(target.x * SCALE_FACTOR * zoomLevel + panOffsetX,
                target.y * SCALE_FACTOR * zoomLevel + panOffsetY);
     ctx.strokeStyle = color;
-    ctx.lineWidth = 2 * zoomLevel;
+    ctx.lineWidth = LINE_COLORS.StrokeWidth * zoomLevel;
     ctx.stroke();
 }
 
@@ -141,31 +170,28 @@ function drawCircle(item) {
             (item.y * SCALE_FACTOR) * zoomLevel + panOffsetY,
             (item.size * SIZE_MULTIPLIER) * zoomLevel, 0, Math.PI * 2);
 
-    // Fill the circle
     if (item.completed) {
-        ctx.fillStyle = "#00FF00"; // Green for completed quests
+        ctx.fillStyle = CIRCLE_COLORS.Completed.fill;
+        ctx.strokeStyle = CIRCLE_COLORS.Completed.stroke;
     } else if (!item.unlocked) {
-        ctx.fillStyle = "#808080"; // Gray for locked quests
+        ctx.fillStyle = CIRCLE_COLORS.Locked.fill;
+        ctx.strokeStyle = CIRCLE_COLORS.Locked.stroke;
     } else {
-        ctx.fillStyle = "#FFF"; // White for unlocked but not completed quests
+        ctx.fillStyle = CIRCLE_COLORS.Unlocked.fill;
+        ctx.strokeStyle = CIRCLE_COLORS.Unlocked.stroke;
     }
+    
     ctx.fill();
-
-    // Stroke the circle
-    ctx.strokeStyle = item.unlocked ? "#000" : "#777"; // Black border for unlocked, lighter gray for locked
-    ctx.lineWidth = 2 * zoomLevel; 
+    ctx.lineWidth = CIRCLE_COLORS.StrokeWidth * zoomLevel; 
     ctx.stroke();
 }
 
-function drawTooltip(hoveredItemKey, tooltip) {
-    // In the mousemove event listener:
-    if (hoveredItemKey) {
-        // Modify the tooltip content based on the hovered item
-        tooltip.innerHTML = `
-            <h4>Heading for ${hoveredItemKey}</h4>
-            <p>Details for ${hoveredItemKey}...</p>
-        `;
-    }
+function drawTooltip(questKey) {
+    const quest = data[questKey];
+    if (!quest) return;
+
+    document.getElementById('tooltipTitle').innerHTML = quest.title;
+    document.getElementById('tooltipSubtitle').innerHTML = quest.subtitle;
 }
 
 function mouseHandler(e) {
@@ -174,24 +200,48 @@ function mouseHandler(e) {
             handleMouseMove(e);
             break;
         case 'mousedown':
-            isDragging = true;
-            prevX = e.clientX;
-            prevY = e.clientY;
+            handleMouseDown(e)
             break;
         case 'mouseup':
-            isDragging = false;
+            handleMouseUp(e)
             break;
     }
 }
 
 function handleMouseMove(e) {
-    if (isDragging) {
+    if (isMouseDown) {
+        isDragging = true
         handleDragging(e);
     } else {
         handleHoverEffect(e);
     }
 
     requestRender();
+}
+
+function handleMouseDown(e) {
+    const rect = canvas.getBoundingClientRect();
+    startX = e.clientX - rect.left;
+    startY = e.clientY - rect.top;
+    isMouseDown = true;
+
+    isDragging = true;
+    prevX = e.clientX;
+    prevY = e.clientY;
+}
+
+function handleMouseUp(e) {
+    const rect = canvas.getBoundingClientRect();
+    const endX = e.clientX - rect.left;
+    const endY = e.clientY - rect.top;
+    
+    // If the mouse hasn't moved much, it's a click, not a drag
+    if (Math.abs(endX - startX) < 5 && Math.abs(endY - startY) < 5) {
+        handleMouseClick()
+    }
+    
+    isMouseDown = false;
+    isDragging = false;
 }
 
 function requestRender() {
@@ -216,13 +266,11 @@ function handleHoverEffect(e) {
     const mouseX = e.clientX - rect.left;
     const mouseY = e.clientY - rect.top;
 
-    // Round to the nearest 10th
     const roundedX = Math.floor(mouseX / 10) * 10;
     const roundedY = Math.floor(mouseY / 10) * 10;
 
-    // Check if the rounded values have changed
     if (roundedX === previousRoundedX && roundedY === previousRoundedY) {
-        return;  // Do nothing if the values haven't changed
+        return;
     }
 
     previousRoundedX = roundedX;
@@ -232,13 +280,12 @@ function handleHoverEffect(e) {
     mouseXElement.innerHTML = roundedX;
     mouseYElement.innerHTML = roundedY;
 
-    // Change hover DEBUG text to show hovered item
     document.getElementById('hoveredItemKey').innerHTML = hoveredItemKey;
 
-    // Show and position the tooltip if an item is hovered
     const tooltip = document.getElementById('tooltip');
     if (hoveredItemKey) {
-        showTooltip(e, tooltip);
+        const hoveredItem = data[hoveredItemKey];
+        showTooltip(hoveredItem, tooltip);
         drawTooltip(hoveredItemKey, tooltip);
     } else {
         hideTooltip(tooltip);
@@ -263,10 +310,13 @@ function getHoveredItemKey(mouseX, mouseY) {
     return null;
 }
 
-function showTooltip(e, tooltip) {
+function showTooltip(hoveredItem, tooltip) {
+    const tooltipX = (hoveredItem.x * SCALE_FACTOR) * zoomLevel + panOffsetX;
+    const tooltipY = (hoveredItem.y * SCALE_FACTOR) * zoomLevel + panOffsetY;
+
     tooltip.style.display = 'block';
-    tooltip.style.left = (e.clientX + 10) + 'px'; // 10 is an offset to position the tooltip a bit right to the cursor
-    tooltip.style.top = (e.clientY + 10) + 'px'; // 10 is an offset to position the tooltip a bit below the cursor
+    tooltip.style.left = (tooltipX + SIZE_MULTIPLIER + 10) + 'px';  // Add an offset of 10 to position the tooltip to the right
+    tooltip.style.top = (tooltipY - SIZE_MULTIPLIER + 10) + 'px';   // Add an offset of 10 to position the tooltip below
 }
 
 function hideTooltip(tooltip) {
@@ -317,7 +367,7 @@ canvas.addEventListener('wheel', (e) => {
     e.preventDefault();
 });
 
-canvas.addEventListener('click', () => {
+function handleMouseClick() {
     if (hoveredItemKey) {
         selectedItemKey = hoveredItemKey;
 
@@ -329,17 +379,19 @@ canvas.addEventListener('click', () => {
         selectedItemKey = null;
         updateQuestPanel(null); // Hide the panel if no quest is selected
     }
-});
+};
 
 function updateQuestPanel(itemKey) {
     const questDetails = document.getElementById('questDetails');
     const questTitle = document.getElementById('questTitle');
     const questSubheading = document.getElementById('questSubheading');
+    const questDescription = document.getElementById('questDescription');
 
     if (itemKey) {
         const item = data[itemKey];
-        questTitle.innerText = itemKey;
-        questSubheading.innerText = 'Subheading for ' + itemKey;
+        questTitle.innerText = item.title;
+        questSubheading.innerText = item.subtitle;
+        questDescription.innerText = item.description;
         questDetails.style.display = 'block';
     } else {
         questDetails.style.display = 'none';
