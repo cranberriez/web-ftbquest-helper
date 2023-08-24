@@ -129,16 +129,28 @@ function drawLine(source, target, sourceKey, targetKey) {
 }
 
 function drawArrow(x, y, angle, length, width, color) {
+    // Calculate the endpoints of the two lines forming the arrowhead
+    const endX1 = x + length * Math.cos(angle - Math.PI / 4); // Adjusted the angle for a narrower arrow
+    const endY1 = y + length * Math.sin(angle - Math.PI / 4);
+
+    const endX2 = x + length * Math.cos(angle + Math.PI / 4); // Adjusted the angle for a narrower arrow
+    const endY2 = y + length * Math.sin(angle + Math.PI / 4);
+
+    ctx.strokeStyle = color;
+    
+    // Draw the first line
     ctx.beginPath();
     ctx.moveTo(x, y);
-    ctx.lineTo(x + length * Math.cos(angle - Math.PI / 4), y + length * Math.sin(angle - Math.PI / 4));  // Adjusted the angle for a narrower arrow
-    ctx.lineTo(x + length * Math.cos(angle + Math.PI / 4), y + length * Math.sin(angle + Math.PI / 4));  // Adjusted the angle for a narrower arrow
-    ctx.closePath(); // Close the triangle of the arrowhead
-    ctx.strokeStyle = color;
-    ctx.fillStyle = color;  // Fill the arrowhead with the same color as the line
-    ctx.fill();
+    ctx.lineTo(endX1, endY1);
+    ctx.stroke();
+
+    // Draw the second line
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(endX2, endY2);
     ctx.stroke();
 }
+
 
 function drawCircle(item) {
     ctx.beginPath();
