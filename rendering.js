@@ -1,51 +1,3 @@
-const MIN_ZOOM = 0.4;
-const MAX_ZOOM = 3.0;
-const SIZE_MULTIPLIER = 30;
-const INITIAL_COORDS = [0, 0]
-const SCALE_FACTOR = 100;
-
-const canvas = document.getElementById('canvas');
-const ctx = canvas.getContext('2d');
-const zoomLevelElement = document.getElementById('zoomLevel')
-const mouseXElement = document.getElementById('mouseX')
-const mouseYElement = document.getElementById('mouseY')
-
-const LINE_COLORS = {
-    Default: "#b0b0b0",    // Pastel gray
-    Requires: "#ff9999",    // Pastel red
-    Unlocks: "#99ccff",    // Pastel blue
-    StrokeWidth: 3,
-};
-
-const CIRCLE_COLORS = {
-    Unlocked: {
-        fill: "#6677cc",         // Dark pastel blue
-        stroke: "#8899dd"        // Brighter variant of dark pastel blue
-    },
-    Locked: {
-        fill: "#555555",         // Dark gray
-        stroke: "#767676"        // Brighter variant of dark gray
-    },
-    Completed: {
-        fill: "#99ff99",         // Pastel green
-        stroke: "#bbffbb"        // Brighter variant of pastel green
-    },
-    StrokeWidth: 2,
-};
-
-// Canvas Interaction Global Variables
-let isDragging = false;
-let prevX = 0;
-let prevY = 0;
-let panOffsetX = canvas.width / 2 - INITIAL_COORDS[0] * SCALE_FACTOR;;
-let panOffsetY = canvas.height / 2 - INITIAL_COORDS[1] * SCALE_FACTOR;;
-let zoomLevel = 1;
-let hoveredItemKey = null;
-let selectedItemKey = null; // to store the currently selected item's key
-let renderRequested = false;
-let startX = 0;
-let startY = 0;
-
 // Initial call to adjustCanvasSize
 adjustCanvasSize();
 
@@ -196,6 +148,7 @@ function drawCircle(item) {
     ctx.stroke();
 }
 
+
 function drawTooltip(questKey) {
     const quest = data[questKey];
     if (!quest) return;
@@ -223,9 +176,11 @@ function handleMouseMove(e) {
         handleDragging(e);
     } else {
         handleHoverEffect(e);
+        if (currentEditingAction === 'create' && !hoveredItemKey) {
+            console.log("Drawing Circle")
+            drawTemporaryCircle(e);
+        }
     }
-
-    requestRender();
 }
 
 function handleMouseDown(e) {
@@ -244,7 +199,7 @@ function handleMouseUp(e) {
     
     // If the mouse hasn't moved much, it's a click, not a drag
     if (Math.abs(endX - startX) < 5 && Math.abs(endY - startY) < 5) {
-        handleMouseClick()
+        handleMouseClick(e)
     }
     
     isDragging = false;
@@ -335,6 +290,8 @@ function handleDragging(e) {
 
     prevX = e.clientX;
     prevY = e.clientY;
+
+    requestRender()
 }
 
 canvas.addEventListener('wheel', (e) => {
@@ -370,7 +327,16 @@ canvas.addEventListener('wheel', (e) => {
     e.preventDefault();
 });
 
-function handleMouseClick() {
+function handleMouseClick(e) {
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
+    if (isEditMode) {
+        handleEditAction(mouseX, mouseY)
+        return
+    }
+    
     if (hoveredItemKey) {
         selectedItemKey = hoveredItemKey;
 

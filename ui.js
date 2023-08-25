@@ -15,16 +15,20 @@ editToggle.addEventListener('change', function() {
     }
 });
 
-let currentEditingAction = null; // Can be 'move', 'create', or 'delete'
+var currentEditingAction = null; // Can be 'move', 'create', or 'delete'
+const actionDebug = document.getElementById('currentEditingMode')
 
 document.getElementById('moveBtn').addEventListener('click', function() {
     currentEditingAction = 'move';
+    actionDebug.innerHTML = currentEditingAction
 });
 
 document.getElementById('createBtn').addEventListener('click', function() {
     currentEditingAction = 'create';
+    actionDebug.innerHTML = currentEditingAction
 });
 
 document.getElementById('deleteBtn').addEventListener('click', function() {
     currentEditingAction = 'delete';
+    actionDebug.innerHTML = currentEditingAction
 });
