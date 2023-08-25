@@ -33,3 +33,15 @@ canvas {
     color: #e0e0e0; /* Light color for tooltip text */
     padding: 10px;
 }
+
+#editingButtons button {
+    padding: 5px 10px;
+    margin: 5px;
+    border: none;
+    background-color: #f7f7f7;
+    cursor: pointer;
+}
+
+#editingButtons button:hover {
+    background-color: #e0e0e0;
+}

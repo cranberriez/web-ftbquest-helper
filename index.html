@@ -21,6 +21,23 @@
         <p id="questDescription"></p>
         <button id="completeButton">Complete</button>
     </div>
+
+    <div>
+        <!-- Toggle switch for editing mode -->
+        <label>
+            Edit Mode:
+            <input type="checkbox" id="editToggle" />
+        </label>
+
+        <!-- Editing buttons -->
+        <div id="editingButtons" style="display: none;">
+            <button id="moveBtn">*</button>
+            <button id="createBtn">+</button>
+            <button id="deleteBtn">X</button>
+        </div>
+    </div>
+
+
     <div id="debugInformation">
         <p>Zoom Level: <span id="zoomLevel">1.00</span></p>
         <p>Selected Item Key: <span id="selectedItemKey">null</span></p>
@@ -28,7 +45,9 @@
         <p>MouseX: <span id="mouseX"></span></p>
         <p>MouseY: <span id="mouseY"></span></p>
     </div>
+    <script src="ui.js"></script>
     <script src="data.js"></script>
-    <script src="script.js"></script>
+    <script src="editing.js"></script>
+    <script src="rendering.js"></script>
 </body>
 </html>
