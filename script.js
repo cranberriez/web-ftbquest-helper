@@ -46,6 +46,28 @@ let renderRequested = false;
 let startX = 0;
 let startY = 0;
 
+// Initial call to adjustCanvasSize
+adjustCanvasSize();
+
+// Event listener to adjust canvas size whenever the window is resized
+window.addEventListener('resize', adjustCanvasSize);
+
+function adjustCanvasSize() {
+    // Adjust the canvas's drawing buffer to match its CSS size
+    canvas.width = canvas.clientWidth;
+    canvas.height = canvas.clientHeight;
+
+    // Reset the transformation matrix
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+    // Update the initial pan offsets to center the content
+    panOffsetX = canvas.width / 2 - INITIAL_COORDS[0] * SCALE_FACTOR;
+    panOffsetY = canvas.height / 2 - INITIAL_COORDS[1] * SCALE_FACTOR;
+
+    // Re-render the canvas content
+    requestRender();
+}
+
 function dynamicThrottle(func, delayFunc) {
     let lastCall = 0;
     return function(...args) {
@@ -250,30 +272,22 @@ function handleHoverEffect(e) {
     const mouseX = e.clientX - rect.left;
     const mouseY = e.clientY - rect.top;
 
-    const roundedX = (Math.floor(mouseX / 10) * 10) + 2.5;
-    const roundedY = (Math.floor(mouseY / 10) * 10) + 2.5;
+    tempHoveredItemKey = getHoveredItemKey(mouseX, mouseY);
 
-    if (roundedX === previousRoundedX && roundedY === previousRoundedY) {
-        return;
+    if (hoveredItemKey == tempHoveredItemKey) {
+        return; // No change in hovered item
     }
 
-    previousRoundedX = roundedX;
-    previousRoundedY = roundedY;
+    hoveredItemKey = tempHoveredItemKey;
 
-    tempHoveredItemKey = getHoveredItemKey(roundedX, roundedY);
-    if (hoveredItemKey == tempHoveredItemKey)
-        return
-
-    hoveredItemKey = tempHoveredItemKey
-
-    mouseXElement.innerHTML = roundedX;
-    mouseYElement.innerHTML = roundedY;
+    mouseXElement.innerHTML = mouseX; // Directly use mouseX, mouseY without rounding
+    mouseYElement.innerHTML = mouseY;
 
     document.getElementById('hoveredItemKey').innerHTML = hoveredItemKey;
 
     const tooltip = document.getElementById('tooltip');
     if (hoveredItemKey) {
-        console.log('tooltip Redraw')
+        console.log('tooltip Redraw');
         const hoveredItem = data[hoveredItemKey];
         showTooltip(hoveredItem, tooltip);
         drawTooltip(hoveredItemKey, tooltip);
@@ -285,19 +299,18 @@ function handleHoverEffect(e) {
 function getHoveredItemKey(mouseX, mouseY) {
     for (let key in data) {
         const item = data[key];
-        const effectiveSize = item.size * zoomLevel * SIZE_MULTIPLIER;
 
-        // Compute the bounding box of the circle
-        const leftBound = (item.x * SCALE_FACTOR) * zoomLevel + panOffsetX - effectiveSize;
-        const rightBound = (item.x * SCALE_FACTOR) * zoomLevel + panOffsetX + effectiveSize;
-        const topBound = (item.y * SCALE_FACTOR) * zoomLevel + panOffsetY - effectiveSize;
-        const bottomBound = (item.y * SCALE_FACTOR) * zoomLevel + panOffsetY + effectiveSize;
+        const circleCenterX = (item.x * SCALE_FACTOR) * zoomLevel + panOffsetX;
+        const circleCenterY = (item.y * SCALE_FACTOR) * zoomLevel + panOffsetY;
+        const effectiveRadius = item.size * SIZE_MULTIPLIER * zoomLevel;
 
-        if (mouseX >= leftBound && mouseX <= rightBound && mouseY >= topBound && mouseY <= bottomBound) {
-            return key;
+        const distance = Math.sqrt((mouseX - circleCenterX)**2 + (mouseY - circleCenterY)**2);
+
+        if (distance <= effectiveRadius) {
+            return key; // Cursor is inside this circle
         }
     }
-    return null;
+    return null; // Cursor is not inside any circle
 }
 
 function showTooltip(hoveredItem, tooltip) {
