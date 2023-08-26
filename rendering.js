@@ -67,6 +67,11 @@ function drawData() {
             drawCircle(data[key]);
         }
     }
+
+    // Draw Temporary Circle (if needed)
+    if (currentEditingAction === 'create' && !hoveredItemKey) {
+        drawTemporaryCircle();
+    }
 }
 
 function drawLine(source, target, sourceKey, targetKey) {
@@ -148,6 +153,24 @@ function drawCircle(item) {
     ctx.stroke();
 }
 
+function drawTemporaryCircle() {
+    const tempX = (mouseX / zoomLevel - panOffsetX) / SCALE_FACTOR;
+    const tempY = (mouseY / zoomLevel - panOffsetY) / SCALE_FACTOR;
+
+    const drawX = (tempX * SCALE_FACTOR) * zoomLevel + panOffsetX;
+    const drawY = (tempY * SCALE_FACTOR) * zoomLevel + panOffsetY;
+    const tempSize = (1 * SIZE_MULTIPLIER) * zoomLevel;
+
+    console.log(`Drawing circle at X: ${drawX} Y: ${drawY}`);
+
+    ctx.beginPath();
+    ctx.arc(drawX, drawY, tempSize, 0, Math.PI * 2);
+    ctx.fillStyle = "#FFD700"; // Gold color for the temporary circle
+    ctx.strokeStyle = "#B8860B"; // Dark goldenrod for the stroke
+    ctx.fill();
+    ctx.lineWidth = CIRCLE_COLORS.StrokeWidth * zoomLevel;
+    ctx.stroke();
+}
 
 function drawTooltip(questKey) {
     const quest = data[questKey];
@@ -172,13 +195,16 @@ function mouseHandler(e) {
 }
 
 function handleMouseMove(e) {
+    const rect = canvas.getBoundingClientRect();
+    mouseX = e.clientX - rect.left;
+    mouseY = e.clientY - rect.top;
+
     if (isDragging) {
         handleDragging(e);
     } else {
         handleHoverEffect(e);
         if (currentEditingAction === 'create' && !hoveredItemKey) {
-            console.log("Drawing Circle")
-            drawTemporaryCircle(e);
+            requestRender();
         }
     }
 }
